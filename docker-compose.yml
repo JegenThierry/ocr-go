@@ -1,0 +1,9 @@
+services:
+  go-ocr-api:
+    image: go-ocr-api
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    restart: unless-stopped
