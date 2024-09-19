@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OCR - PDF</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+  </head>
+  <body>
+    <div class="upload-container">
+      <h1 class="header">Upload PDF for OCR</h1>
+      <p>Select a file or drag and drop your PDF to convert it to a OCR-PDF</p>
+      <form id="file-upload-form" class="upload-form">
+        <label for="file-upload" class="button"> Upload my PDF </label>
+        <input
+          id="file-upload"
+          type="file"
+          name="pdf"
+          accept=".pdf"
+          required
+          onchange="document.getElementById('submit-button').style.display = 'block';"
+        />
+        <button
+          id="submit-button"
+          class="button button-accent"
+          style="display: none"
+          type="submit"
+        >
+          Submit
+        </button>
+      </form>
+    </div>
+
+    <div class="loading-container">
+      <div class="ball"></div>
+      <div class="ball"></div>
+      <div class="ball"></div>
+      <div class="ball"></div>
+      <div class="ball"></div>
+    </div>
+
+    <script>
+      async function handleFormSubmit(event) {
+        event.preventDefault(); // Prevent the default form submission
+        const formData = new FormData(event.target);
+
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+
+          const disposition = response.headers.get("Content-Disposition");
+          const filename = disposition
+            ? disposition.split("filename=")[1].replace(/\"/g, "")
+            : "download.pdf";
+
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else {
+          console.error("Error downloading file:", response.statusText);
+        }
+      }
+
+      document
+        .getElementById("file-upload-form")
+        .addEventListener("submit", handleFormSubmit);
+    </script>
+  </body>
+</html>
