@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"ocr-pdf-api/models"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,7 +15,14 @@ import (
 func OCRHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Converting file.")
 
-	err := r.ParseMultipartForm(10 << 20) // Limit upload size to 10MB
+	langStringUrl := r.URL.Query().Get("lang")
+	lang, err := models.ParseLangString(langStringUrl)
+
+	if err != nil {
+		lang = models.EN
+	}
+
+	err = r.ParseMultipartForm(10 << 20) // Limit upload size to 10MB
 	if err != nil {
 		http.Error(w, "Unable to parse multipart form object", http.StatusBadRequest)
 		return
@@ -44,7 +52,8 @@ func OCRHandler(w http.ResponseWriter, r *http.Request) {
 
 	ocrFilepath := filepath.Join(tempDir, "ocr_"+handler.Filename)
 
-	cmd := exec.Command("ocrmypdf", "--force-ocr", uploadedFilePath, ocrFilepath)
+	cmd := exec.Command("ocrmypdf", "--force-ocr", "-l", lang.String(), uploadedFilePath, ocrFilepath)
+
 	output, err := cmd.CombinedOutput() // Capture both stdout and stderr
 	if err != nil {
 		log.Printf("Error while running the OCR command: %v", err)
